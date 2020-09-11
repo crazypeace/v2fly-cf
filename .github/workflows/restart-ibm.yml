@@ -1,0 +1,24 @@
+name: IBM Cloud Auto Restart
+
+on:
+  workflow_dispatch:
+  schedule:
+    #为了避免扎堆重启，随机修改一下这里的定时运行时间。 格式：'分 时 日 月 星期'
+    - cron: '47 4 * * WED'
+
+jobs:
+  ibm-cloud-restart:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: citizen-of-planet-earth/cf-cli-action@v1
+      env:
+        IBM_APP_NAME: ${{ secrets.IBM_APP_NAME }}
+      with:
+        cf_api: https://api.us-south.cf.cloud.ibm.com
+        cf_username: ${{ secrets.CF_USER_IBM }}
+        cf_password: ${{ secrets.CF_PASSWORD_IBM }}
+        cf_org: ${{ secrets.CF_ORG_IBM }}
+        cf_space: ${{ secrets.CF_SPACE_IBM }}
+        command: >
+          restart "$IBM_APP_NAME"
