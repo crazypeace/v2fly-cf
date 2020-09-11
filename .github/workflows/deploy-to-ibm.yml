@@ -2,7 +2,9 @@ name: Deploy to IBM Cloud
 
 on:
   workflow_dispatch:
-  
+  schedule:
+    #为了避免扎堆重启，随机修改一下这里的定时运行时间。 格式：'分 时 日 月 星期'
+    - cron: '47 4 * * WED'  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -47,24 +49,24 @@ jobs:
         }
         EOF
         
-        VMESSCODE=$(base64 -w 0 << EOF
-          {
-            "v": "2",
-            "ps": "${{ secrets.IBM_APP_NAME }}",
-            "add": "${{ secrets.IBM_APP_NAME }}.us-south.cf.appdomain.cloud",
-            "port": "443",
-            "id": "${{ secrets.CF_UUID_IBM }}",
-            "aid": "4",
-            "net": "ws",
-            "type": "none",
-            "host": "",
-            "path": "{{ secrets.CF_PATH_IBM }}",
-            "tls": "tls"
-          }
-          EOF
-        )
+        cat > vmesscode << EOF
+        {
+          "v": "2",
+          "ps": "${{ secrets.IBM_APP_NAME }}",
+          "add": "${{ secrets.IBM_APP_NAME }}.us-south.cf.appdomain.cloud",
+          "port": "443",
+          "id": "${{ secrets.CF_UUID_IBM }}",
+          "aid": "4",
+          "net": "ws",
+          "type": "none",
+          "host": "",
+          "path": "{{ secrets.CF_PATH_IBM }}",
+          "tls": "tls"
+        }
+        EOF
         
-        echo vmess://${VMESSCODE} > vmess.url
+        echo vmess:// > vmess.url
+        base64 -w 0 vmesscode >> vmess.url
         
         cat > manifest.yml << EOF
         ---
