@@ -1,11 +1,6 @@
 name: Deploy to IBM Cloud
 
 on:
-  push:
-    branches:
-    - master
-  schedule:
-    - cron: "0 6 * * 3"
   workflow_dispatch:
   
 jobs:
@@ -19,6 +14,7 @@ jobs:
         unzip -o v2ray-linux-64.zip "v2ray" "v2ctl" "geosite.dat" "geoip.dat" 
         rm -rf v2ray-linux-64.zip
         chmod 700 v2ray v2ctl
+        mv v2ray yar2v
         touch `date +%Y%m%d%H%M%S`
         cat > config.json << EOF
         {
@@ -35,7 +31,10 @@ jobs:
                 ]
               },
               "streamSettings": {
-                "network":"ws"
+                "network":"ws",
+                    "wsSettings": {
+                        "path": "${{ secrets.CF_PATH_IBM }}"
+                    }                
               }
             }
           ],
@@ -48,16 +47,38 @@ jobs:
         }
         EOF
         
-        cat > manifest-ibm.yml << EOF
+        VMESSCODE=$(base64 -w 0 << EOF
+          {
+            "v": "2",
+            "ps": "${{ secrets.IBM_APP_NAME }}",
+            "add": "${{ secrets.IBM_APP_NAME }}.us-south.cf.appdomain.cloud",
+            "port": "443",
+            "id": "${{ secrets.CF_UUID_IBM }}",
+            "aid": "4",
+            "net": "ws",
+            "type": "none",
+            "host": "",
+            "path": "{{ secrets.CF_PATH_IBM }}",
+            "tls": "tls"
+          }
+          EOF
+        )
+        
+        echo vmess://${VMESSCODE} > vmess.url
+        
+        cat > manifest.yml << EOF
         ---
         applications:
         - name: ${{ secrets.IBM_APP_NAME }}
           memory: 128M
           disk_quota: 1G
           random-route: true
-          command: ./v2ray
           buildpacks:
           - binary_buildpack
+        EOF
+        
+        cat > Procfile << EOF
+        web: ./yar2v
         EOF
     
     - uses: citizen-of-planet-earth/cf-cli-action@v1
@@ -68,5 +89,5 @@ jobs:
         cf_org: ${{ secrets.CF_ORG_IBM }}
         cf_space: ${{ secrets.CF_SPACE_IBM }}
         command: >
-          push ${{ secrets.IBM_APP_NAME }} -f manifest-ibm.yml
+          push ${{ secrets.IBM_APP_NAME }}
           
