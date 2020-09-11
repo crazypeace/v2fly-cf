@@ -3,8 +3,8 @@ name: Deploy to IBM Cloud
 on:
   workflow_dispatch:
   schedule:
-    #为了避免扎堆重启，随机修改一下这里的定时运行时间。 格式：'分 时 日 月 星期'
-    - cron: '47 4 * * WED'  
+    #为了避免扎堆，随机修改一下这里的定时运行时间。 格式：'分 时 日 月 星期'
+    - cron: '24 4 * * WED'  
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -60,7 +60,7 @@ jobs:
           "net": "ws",
           "type": "none",
           "host": "",
-          "path": "{{ secrets.CF_PATH_IBM }}",
+          "path": "${{ secrets.CF_PATH_IBM }}",
           "tls": "tls"
         }
         EOF
